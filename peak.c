@@ -23,12 +23,9 @@ BOOL Read(PROCESS_INFORMATION *pif, int i) {
    if (res)
       printf("#%d peak memory used: %d KB\t(%d bytes)\n", i,
              p.PeakWorkingSetSize >> 10, p.PeakWorkingSetSize);
-   else {
-      return res;
-   }
 
-   CloseHandle(pif->hProcess);
-   CloseHandle(pif->hThread);
+   res &= CloseHandle(pif->hProcess);
+   res &= CloseHandle(pif->hThread);
    return res;
 }
 
