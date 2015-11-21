@@ -17,6 +17,10 @@ BOOL Run(char* command, PROCESS_INFORMATION *pif, STARTUPINFO *si, int null_outp
    return CreateProcess(NULL, command, NULL, NULL, FALSE, 0, NULL, NULL, si, pif);
 }
 
+void Wait(HANDLE hProcess) {
+   WaitForSingleObject(hProcess, INFINITE);
+}
+
 BOOL Read(PROCESS_INFORMATION *pif, int i) {
    PROCESS_MEMORY_COUNTERS p;
    int res = GetProcessMemoryInfo(pif->hProcess, &p, sizeof(p));
@@ -29,12 +33,15 @@ BOOL Read(PROCESS_INFORMATION *pif, int i) {
    return res;
 }
 
-int Num(int i, int p, int no) {
-    return i-(p && i > p)-(no && i > no);
+void WaitAndRead(PROCESS_INFORMATION *pif, int i, int num) {
+   Wait(pif->hProcess);
+
+   if (!Read(pif, num))
+      fprintf(stderr, "Unable to read program #%d attributes\n", num);
 }
 
-void Wait(HANDLE hProcess) {
-	WaitForSingleObject(hProcess, INFINITE);
+int Num(int i, int p, int no) {
+    return i-(p && i > p)-(no && i > no);
 }
 
 int main(int argc, char* argv[]) {
@@ -56,31 +63,15 @@ int main(int argc, char* argv[]) {
    PROCESS_INFORMATION pif[argc-1];
    STARTUPINFO si[argc-1];
 
-   for (i = 1; i < argc; i++) {
-      if (i == parallel || i == null_output)
-         continue;
-        
-      if (!Run(argv[i], &pif[i-1], &si[i-1], null_output)) {
-         fprintf(stderr, "Unable to start program #%d\n", Num(i, parallel, null_output));
-         continue;
-      }
-
-      if (!parallel) {
-         Wait(pif[i-1].hProcess);
-
-         if (!Read(&pif[i-1], Num(i, parallel, null_output)))
-            fprintf(stderr, "Unable to read program #%d attributes\n", Num(i, parallel, null_output));
-      }
-   }
+   for (i = 1; i < argc; i++)
+      if (i != parallel && i != null_output)        
+         if (!Run(argv[i], &pif[i-1], &si[i-1], null_output))
+            fprintf(stderr, "Unable to start program #%d\n", Num(i, parallel, null_output));
+         else if (!parallel)
+            WaitAndRead(&pif[i-1], i, Num(i, parallel, null_output));
     
    if (parallel)
-      for (i = 1; i < argc; i++) {
-         if (i == parallel || i == null_output || !pif[i-1].hProcess)
-            continue;
-
-         Wait(pif[i-1].hProcess);
-
-         if (!Read(&pif[i-1], Num(i, parallel, null_output)))
-            fprintf(stderr, "Unable to read program #%d attributes\n", Num(i, parallel, null_output));
-      }
+      for (i = 1; i < argc; i++)
+         if (i != parallel && i != null_output && pif[i-1].hProcess)
+            WaitAndRead(&pif[i-1], i, Num(i, parallel, null_output));
 }
