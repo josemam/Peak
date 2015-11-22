@@ -45,21 +45,23 @@ int Num(int i, int p, int no) {
 }
 
 int main(int argc, char* argv[]) {
-   if (argc < 2) {
-      Usage(argv[0]);
-      return 1;
-   }
-    
    int i;
    int parallel = 0;
    int null_output = 0;
+   int valid_inputs = 0;
    for (i = 1; i < argc; i++)
       if (strcmp(argv[i], "-p") == 0)
          parallel = i;
       else if (strcmp(argv[i], "-n") == 0)
          null_output = i;
-            
-    
+      else
+         ++valid_inputs;
+
+   if (!valid_inputs) {
+      Usage(argv[0]);
+      return 1;
+   }
+
    PROCESS_INFORMATION pif[argc-1];
    STARTUPINFO si[argc-1];
 
