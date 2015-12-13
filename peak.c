@@ -2,8 +2,9 @@
 #include <stdio.h>
 #include <psapi.h>   // use -lpsapi when linking
 
-void Usage(char* name) {
+int Usage(char* name) {
    fprintf(stderr, "usage: %s program1 [program2 program3 ...] [-p] [-n]\n", name);
+   return 1;
 }
 
 BOOL Run(char* command, PROCESS_INFORMATION *pif, STARTUPINFO *si, int null_output) {
@@ -57,10 +58,8 @@ int main(int argc, char* argv[]) {
       else
          ++valid_inputs;
 
-   if (!valid_inputs) {
-      Usage(argv[0]);
-      return 1;
-   }
+   if (!valid_inputs)
+      return Usage(argv[0]);
 
    PROCESS_INFORMATION pif[argc-1];
    STARTUPINFO si[argc-1];
