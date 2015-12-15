@@ -7,7 +7,7 @@ int Usage(char* name) {
    return 1;
 }
 
-BOOL Run(char* command, PROCESS_INFORMATION *pif, STARTUPINFO *si, int null_output) {
+BOOL Run(char* command, PROCESS_INFORMATION *pif, STARTUPINFO *si, int null_output, int own_directory) {
    ZeroMemory(si,sizeof(*si));
    si->cb = sizeof(*si);
    if (null_output) {
@@ -15,7 +15,15 @@ BOOL Run(char* command, PROCESS_INFORMATION *pif, STARTUPINFO *si, int null_outp
       si->hStdOutput = NULL;
    }
 
-   return CreateProcess(NULL, command, NULL, NULL, FALSE, 0, NULL, NULL, si, pif);
+   char* dir = NULL;
+   char d[strlen(command)+3];
+   if (own_directory) {
+      dir = d;
+      strcpy(dir, command);
+      strcat(dir, "\\..");
+   }
+
+   return CreateProcess(NULL, command, NULL, NULL, FALSE, 0, NULL, dir, si, pif);
 }
 
 void Wait(HANDLE hProcess) {
@@ -41,20 +49,23 @@ void WaitAndRead(PROCESS_INFORMATION *pif, int i, int num) {
       fprintf(stderr, "Unable to read program #%d attributes\n", num);
 }
 
-int Num(int i, int p, int no) {
-    return i-(p && i > p)-(no && i > no);
+int Num(int i, int p, int no, int dir) {
+   return i-(p && i > p)-(no && i > no)-(dir && i > dir);
 }
 
 int main(int argc, char* argv[]) {
    int i;
    int parallel = 0;
    int null_output = 0;
+   int own_directory = 0;
    int valid_inputs = 0;
    for (i = 1; i < argc; i++)
       if (strcmp(argv[i], "-p") == 0)
          parallel = i;
       else if (strcmp(argv[i], "-n") == 0)
          null_output = i;
+      else if (strcmp(argv[i], "-d") == 0)
+         own_directory = i;
       else
          ++valid_inputs;
 
@@ -65,14 +76,14 @@ int main(int argc, char* argv[]) {
    STARTUPINFO si[argc-1];
 
    for (i = 1; i < argc; i++)
-      if (i != parallel && i != null_output)        
-         if (!Run(argv[i], &pif[i-1], &si[i-1], null_output))
-            fprintf(stderr, "Unable to start program #%d\n", Num(i, parallel, null_output));
+      if (i != parallel && i != null_output && i != own_directory)        
+         if (!Run(argv[i], &pif[i-1], &si[i-1], null_output, own_directory))
+            fprintf(stderr, "Unable to start program #%d\n", Num(i, parallel, null_output, own_directory));
          else if (!parallel)
-            WaitAndRead(&pif[i-1], i, Num(i, parallel, null_output));
+            WaitAndRead(&pif[i-1], i, Num(i, parallel, null_output, own_directory));
     
    if (parallel)
       for (i = 1; i < argc; i++)
-         if (i != parallel && i != null_output && pif[i-1].hProcess)
-            WaitAndRead(&pif[i-1], i, Num(i, parallel, null_output));
+         if (i != parallel && i != null_output && i != own_directory && pif[i-1].hProcess)
+            WaitAndRead(&pif[i-1], i, Num(i, parallel, null_output, own_directory));
 }
