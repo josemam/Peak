@@ -3,7 +3,7 @@
 #include <psapi.h>   // use -lpsapi when linking
 
 int Usage(char* name) {
-   fprintf(stderr, "usage: %s program1 [program2 program3 ...] [-p] [-n]\n", name);
+   fprintf(stderr, "usage: %s program1 [program2 program3 ...] [-p] [-n] [-d]\n", name);
    return 1;
 }
 
