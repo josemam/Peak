@@ -1,52 +1,16 @@
-#include <windows.h>
 #include <stdio.h>
-#include <psapi.h>   // use -lpsapi when linking
+
+#ifdef _WIN32
+   #include "win32.c"  // requires -lpsapi when linking
+#elif __linux__
+   #include "unix.c"
+#else 
+   #error "OS not supported"
+#endif
 
 int Usage(char* name) {
    fprintf(stderr, "usage: %s program1 [program2 program3 ...] [-p] [-n] [-d]\n", name);
    return 1;
-}
-
-BOOL Run(char* command, PROCESS_INFORMATION *pif, STARTUPINFO *si, int null_output, int own_directory) {
-   ZeroMemory(si,sizeof(*si));
-   si->cb = sizeof(*si);
-   if (null_output) {
-      si->dwFlags |= STARTF_USESTDHANDLES;
-      si->hStdOutput = NULL;
-   }
-
-   char* dir = NULL;
-   char d[strlen(command)+3];
-   if (own_directory) {
-      dir = d;
-      strcpy(dir, command);
-      strcat(dir, "\\..");
-   }
-
-   return CreateProcess(NULL, command, NULL, NULL, FALSE, 0, NULL, dir, si, pif);
-}
-
-void Wait(HANDLE hProcess) {
-   WaitForSingleObject(hProcess, INFINITE);
-}
-
-BOOL Read(PROCESS_INFORMATION *pif, int i) {
-   PROCESS_MEMORY_COUNTERS p;
-   BOOL res = GetProcessMemoryInfo(pif->hProcess, &p, sizeof(p));
-   if (res)
-      printf("#%d peak memory used: %d KB\t(%d bytes)\n", i,
-             p.PeakWorkingSetSize >> 10, p.PeakWorkingSetSize);
-
-   res &= CloseHandle(pif->hProcess);
-   res &= CloseHandle(pif->hThread);
-   return res;
-}
-
-void WaitAndRead(PROCESS_INFORMATION *pif, int i, int num) {
-   Wait(pif->hProcess);
-
-   if (!Read(pif, num))
-      fprintf(stderr, "Unable to read program #%d attributes\n", num);
 }
 
 int Num(int i, int p, int no, int dir) {
@@ -72,18 +36,18 @@ int main(int argc, char* argv[]) {
    if (!valid_inputs)
       return Usage(argv[0]);
 
-   PROCESS_INFORMATION pif[argc-1];
-   STARTUPINFO si[argc-1];
+   PREPARE();
 
    for (i = 1; i < argc; i++)
       if (i != parallel && i != null_output && i != own_directory)        
-         if (!Run(argv[i], &pif[i-1], &si[i-1], null_output, own_directory))
+         if (!RUN()) {
             fprintf(stderr, "Unable to start program #%d\n", Num(i, parallel, null_output, own_directory));
-         else if (!parallel)
-            WaitAndRead(&pif[i-1], i, Num(i, parallel, null_output, own_directory));
-    
+            UNIX_KILL();
+         } else if (!parallel)
+            WAIT_AND_READ();
+
    if (parallel)
       for (i = 1; i < argc; i++)
-         if (i != parallel && i != null_output && i != own_directory && pif[i-1].hProcess)
-            WaitAndRead(&pif[i-1], i, Num(i, parallel, null_output, own_directory));
+         if (i != parallel && i != null_output && i != own_directory && CORRECT())
+            WAIT_AND_READ();
 }
