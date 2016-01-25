@@ -1,10 +1,9 @@
 #include <unistd.h>
 #include <sys/resource.h>
 #include <sys/wait.h>
-#include <fcntl.h>  // O_RDONLY
 #include <stdlib.h>
 #include <string.h>
-#include <signal.h>
+#include <libgen.h>
 
 #define BOOL int
 #define FALSE 0
@@ -52,6 +51,12 @@ BOOL Run(char* command, pid_t *pif, int null_output, int own_directory) {
       if (null_output)
          dup2(open("/dev/null", 0), 1);
 
+      if (own_directory) {
+         char* dir = strdup(first_parameter);
+         chdir(dirname(dir));
+         free(dir);
+      }
+
       execv(first_parameter, parameters);
       for (; i >= 0; i--)
          free(parameters[i]);
@@ -61,8 +66,6 @@ BOOL Run(char* command, pid_t *pif, int null_output, int own_directory) {
 
    return TRUE;
 }
-
-BOOL Read(pid_t *pif, int* si, int i, struct rusage *ru);
 
 BOOL Wait(pid_t *pif, int* si, int i) {
    struct rusage ru;
