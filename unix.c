@@ -16,11 +16,11 @@
 #define UNIX_KILL() kill(getpid(), SIGKILL)
 
 int FindNextParam(char* command) {
-   BOOL dcommas = 0;
+   BOOL dcommas = FALSE;
    int i;
-   for (i = 0; ((dcommas&2) || command[i] != ' ') && command[i] != '\0'; i++)
+   for (i = 0; (dcommas || command[i] != ' ') && command[i] != '\0'; i++)
       if (command[i] == '"')
-         dcommas++;
+         dcommas ^= TRUE;
 
    if (command[i] != '\0')
       command[i++] = '\0';
@@ -75,7 +75,7 @@ BOOL Wait(pid_t *pif, int* si, int i) {
    if (!WIFSIGNALED(*si) || WTERMSIG(*si) != SIGKILL)
       return Read(pif, si, i, &ru);
 
-   return TRUE;
+   return FALSE;
 }
 
 BOOL Read(pid_t *pif, int* si, int i, struct rusage *ru) {
