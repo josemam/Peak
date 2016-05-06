@@ -34,8 +34,7 @@ BOOL Read(PROCESS_INFORMATION *pif, int i) {
    PROCESS_MEMORY_COUNTERS p;
    BOOL res = GetProcessMemoryInfo(pif->hProcess, &p, sizeof(p));
    if (res)
-      printf("#%d peak memory used: %d KB\t(%d bytes)\n", i,
-             p.PeakWorkingSetSize >> 10, p.PeakWorkingSetSize);
+      printf(PEAK_PRINT, i, p.PeakWorkingSetSize >> 10, p.PeakWorkingSetSize);
 
    res &= CloseHandle(pif->hProcess);
    res &= CloseHandle(pif->hThread);
@@ -46,5 +45,5 @@ void WaitAndRead(PROCESS_INFORMATION *pif, int i, int num) {
    Wait(pif->hProcess);
 
    if (!Read(pif, num))
-      fprintf(stderr, "Unable to read program #%d attributes\n", num);
+      fprintf(stderr, READ_ERROR, num);
 }

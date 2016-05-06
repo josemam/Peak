@@ -1,5 +1,9 @@
 #include <stdio.h>
 
+const char*  RUN_ERROR = "Unable to start program #%d\n";
+const char* PEAK_PRINT = "#%d peak memory used: %d KB\t(%d bytes)\n";
+const char* READ_ERROR = "Unable to read program #%d attributes\n";
+
 #ifdef _WIN32
    #include "win32.c"  // requires -lpsapi when linking
 #elif __linux__
@@ -39,9 +43,9 @@ int main(int argc, char* argv[]) {
    PREPARE();
 
    for (i = 1; i < argc; i++)
-      if (i != parallel && i != null_output && i != own_directory)        
+      if (i != parallel && i != null_output && i != own_directory)
          if (!RUN()) {
-            fprintf(stderr, "Unable to start program #%d\n", Num(i, parallel, null_output, own_directory));
+            fprintf(stderr, RUN_ERROR, Num(i, parallel, null_output, own_directory));
             UNIX_KILL();
          } else if (!parallel)
             WAIT_AND_READ();

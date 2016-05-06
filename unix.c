@@ -73,13 +73,13 @@ BOOL Wait(pid_t *pif, int* si, int i) {
       return FALSE;
 
    if (!WIFSIGNALED(*si) || WTERMSIG(*si) != SIGKILL)
-      return Read(pif, si, i, &ru);
+      return Read(pif, i, &ru);
 
    return FALSE;
 }
 
-BOOL Read(pid_t *pif, int* si, int i, struct rusage *ru) {
+BOOL Read(pid_t *pif, int i, struct rusage *ru) {
    int memory = ru->ru_maxrss;
-   printf("#%d peak memory used: %d KB\t(%d bytes)\n", i, memory, memory << 10);
+   printf(PEAK_PRINT, i, memory, memory << 10);
    return TRUE;
 }
