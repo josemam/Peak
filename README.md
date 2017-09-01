@@ -21,7 +21,6 @@ You may place the arguments anywhere and in any order.
 ## Please note
 
  - Windows and Linux memory management is not strictly identical. 
- - The sources used to get the peak memory ([PeakWorkingSetSize]
-   (https://msdn.microsoft.com/en-us/library/ms684877.aspx) in Windows and
-   [ru_maxrss] (http://man7.org/linux/man-pages/man2/getrusage.2.html)
+ - The sources used to get the peak memory ([PeakWorkingSetSize](https://msdn.microsoft.com/en-us/library/ms684877.aspx) in Windows and
+   [ru_maxrss](http://man7.org/linux/man-pages/man2/getrusage.2.html)
    in Linux) do not measure the same thing on both Windows and Linux.
